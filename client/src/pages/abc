@@ -1,0 +1,291 @@
+import { useState, useEffect ,useCallback } from "react";
+import { MdSearch } from "react-icons/md";
+import { FaUser } from "react-icons/fa";
+import axios from "axios";
+import Header from "../components/Header";
+import Sidebar from "../components/SideBar";
+import { useParams } from "react-router-dom";
+
+interface User {
+  name: string;
+  email: string;
+}
+
+interface Organization {
+  id: string;
+  name: string;
+}
+
+const users: User[] = [
+  { name: "NewTest User", email: "abc@test.de" },
+  { name: "John Doe", email: "user10453497198453631309@example.com" },
+  { name: "John Doe", email: "user1065247109813233401@example.com" },
+  { name: "John Doe", email: "user1069748540521749571@example.com" },
+];
+
+const OrganizationChange = () => {
+  const { id } = useParams<{ id: string }>();
+
+  const [search, setSearch] = useState("");
+  const [orgSearch, setOrgSearch] = useState("");
+
+  const [showModal, setShowModal] = useState(false);
+  const [parentOrg, setParentOrg] = useState("");
+  const [orgName, setOrgName] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+
+  const filteredUsers = users.filter((u) =>
+    `${u.name} ${u.email}`.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const fetchOrganizations = useCallback(async () => {
+    if (!id) return;
+  
+    console.log("Sending ID to backend:", id);
+  
+    try {
+      const res = await axios.get(`/api/organization/add/${id}`, {
+        withCredentials: true,
+      });
+  
+      if (res?.data?.success) {
+        setOrganizations(res.data.data || []);
+      }
+    } catch (err) {
+      console.error("Fetch org error:", err);
+    }
+  }, [id]);
+  
+  // Use the memoized function in useEffect
+  useEffect(() => {
+    fetchOrganizations();
+  }, [fetchOrganizations]);
+
+  // ================= CREATE ORG =================
+  const handleCreateOrganization = async () => {
+    if (!orgName.trim()) {
+      alert("Organization name is required");
+      return;
+    }
+
+    if (!id) {
+      alert("Invalid team id");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const res = await axios.post(
+        "/api/organization/create",
+        {
+          parentOrganization: parentOrg,
+          organizationName: orgName,
+          teamId: id,
+        },
+        { withCredentials: true }
+      );
+
+      if (res?.data?.success) {
+        alert(res.data.message);
+
+        setShowModal(false);
+        setParentOrg("");
+        setOrgName("");
+
+        fetchOrganizations();
+      }
+    } catch (err: any) {
+      console.error("Create org error:", err);
+      alert(err?.response?.data?.message || "Error creating organization");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex bg-slate-100">
+      <main className="flex-1 flex flex-col">
+        <Header />
+
+        <div className="flex flex-1">
+          <Sidebar />
+
+          <div className="flex-1 flex flex-col p-4">
+            {/* SEARCH USERS */}
+            <div className="mb-4">
+              <p className="text-sm font-medium text-slate-700 mb-1">
+                Benutzer suchen
+              </p>
+
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-blue-500">
+                  <MdSearch className="w-4 h-4" />
+                </span>
+
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search..."
+                  aria-label="Search users"
+                  className="w-full pl-9 pr-3 py-2 text-sm bg-white border border-slate-300 rounded-sm outline-none focus:ring-2 focus:ring-blue-400"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-1 gap-4">
+              {/* USERS */}
+              <section className="flex-1 bg-white rounded-sm overflow-hidden">
+                <ul className="divide">
+                  {filteredUsers.map((user, i) => (
+                    <li
+                      key={i}
+                      className="flex items-center justify-between px-4 py-3 hover:bg-slate-50"
+                    >
+                      <div className="flex items-center">
+                        <div className="w-8 h-8 rounded-full border flex items-center justify-center mr-3">
+                          <FaUser className="w-4 h-4" />
+                        </div>
+
+                        <div>
+                          <p className="text-sm font-medium">{user.name}</p>
+                          <p className="text-xs text-gray-500">{user.email}</p>
+                        </div>
+                      </div>
+
+                      <input
+                        type="checkbox"
+                        className="w-4 h-4"
+                        aria-label={`Select user ${user.name}`}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              </section>
+
+              {/* ORGANIZATION PANEL */}
+              <section className="w-[40%] bg-slate-50 p-4 rounded-sm flex flex-col">
+                <div className="mb-3">
+                  <p className="text-sm font-medium text-slate-700 mb-1">
+                    Organisation suchen
+                  </p>
+
+                  <div className="flex gap-3">
+                    <div className="relative flex-1">
+                      <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-blue-500">
+                        <MdSearch className="w-4 h-4" />
+                      </span>
+
+                      <input
+                        value={orgSearch}
+                        onChange={(e) => setOrgSearch(e.target.value)}
+                        placeholder="Search..."
+                        aria-label="Search organizations"
+                        className="w-full pl-9 pr-3 py-2 text-sm bg-white rounded-sm outline-none focus:ring-2 focus:ring-blue-400"
+                      />
+                    </div>
+
+                    <button
+                      onClick={() => setShowModal(true)}
+                      className="px-5 py-2 text-sm text-white bg-blue-600 rounded-sm hover:bg-blue-700"
+                    >
+                      Erstellen
+                    </button>
+
+                    <button className="px-5 py-2 text-sm text-white bg-slate-800 rounded-sm hover:bg-slate-900">
+                      Löschen
+                    </button>
+                  </div>
+                </div>
+
+                {/* ORGANIZATIONS */}
+                <div className="flex-1 bg-white flex justify-center items-center">
+                  {organizations.length === 0 ? (
+                    <p className="text-lg text-blue-400">
+                      Keine Organisationen gefunden.
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2 w-full p-2">
+                      {organizations
+                        .filter((org) =>
+                          org.name.toLowerCase().includes(orgSearch.toLowerCase())
+                        )
+                        .map((org) => (
+                          <div
+                            key={org.id}
+                            className="border p-2 rounded-sm text-sm"
+                          >
+                            {org.name}
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </div>
+              </section>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* MODAL */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white w-[420px] rounded-md shadow-xl p-6">
+            <h2 className="text-xl font-semibold text-blue-500 mb-4">
+              Organisation erstellen
+            </h2>
+
+            <p className="text-sm text-gray-600 mb-4">
+              Bitte wählen Sie eine übergeordnete Organisation aus oder lassen Sie dieses Feld leer.
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs text-gray-500">
+                  Übergeordnete Organisation
+                </label>
+
+                <select
+                  value={parentOrg}
+                  onChange={(e) => setParentOrg(e.target.value)}
+                  className="w-full mt-1 px-3 py-2 rounded-sm bg-white"
+                >
+                  <option value="">Add New (No Parent)</option>
+                </select>
+              </div>
+
+              <input
+                type="text"
+                value={orgName}
+                onChange={(e) => setOrgName(e.target.value)}
+                placeholder="Name"
+                className="w-full border px-3 py-2 rounded-sm"
+              />
+            </div>
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setShowModal(false)}
+                className="px-4 py-2 bg-slate-700 text-white rounded-sm"
+              >
+                Abbrechen
+              </button>
+
+              <button
+                onClick={handleCreateOrganization}
+                disabled={loading}
+                className="px-4 py-2 bg-blue-600 text-white rounded-sm hover:bg-blue-700"
+              >
+                {loading ? "Creating..." : "Ja"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default OrganizationChange;

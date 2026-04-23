@@ -133,8 +133,9 @@ Modules:
 ## 1. Clone repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/keycloak-iam-platform.git
+git clone (https://github.com/imvk01/Keycloak-IAM-Platform.git)
 cd keycloak-iam-platform
+npm install
 ```
 
 ---
@@ -178,18 +179,8 @@ Create `.env` inside server:
 ```env
 MONGO_URI=your_mongodb_connection_string
 JWT_SECRET=your_secret_key
+NODE_ENV=development
 PORT=4000
-```
-
----
-
-## Seed Demo Credentials
-
-```txt
-Admin User
-
-Email: admin@test.com
-Password: Admin123
 ```
 
 ---
