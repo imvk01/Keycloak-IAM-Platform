@@ -7,9 +7,15 @@ const gradientVariants = {
   violetBlue: "from-violet-500 to-blue-400",
   pinkOrange: "from-pink-500 to-orange-400",
   greenBlue: "from-emerald-500 to-cyan-400",
+} as const;
+
+type GradientVariant = keyof typeof gradientVariants;
+
+type HeaderProps = {
+  variant?: GradientVariant;
 };
 
-const Header = ({ variant = "violetBlue" }) => {
+const Header = ({ variant = "violetBlue" }: HeaderProps) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const navigate = useNavigate();
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -32,7 +38,6 @@ const Header = ({ variant = "violetBlue" }) => {
     }
   };
 
-  // ✅ close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -49,11 +54,9 @@ const Header = ({ variant = "violetBlue" }) => {
 
   return (
     <div
-      className={`h-20 bg-gradient-to-r ${gradientVariants[variant]} flex items-center justify-end px-6 text-white shadow-md`}
+      className={`h-20 bg-linear-to-r ${gradientVariants[variant]} flex items-center justify-end px-6 text-white shadow-md`}
     >
       <div className="relative" ref={dropdownRef}>
-        
-        {/* User Icon (CLICK) */}
         <div
           onClick={() => setShowDropdown(!showDropdown)}
           className="w-9 h-9 rounded-full border border-white flex items-center justify-center cursor-pointer"
@@ -61,7 +64,6 @@ const Header = ({ variant = "violetBlue" }) => {
           <FaUser className="w-4 h-4" />
         </div>
 
-        {/* Dropdown */}
         {showDropdown && (
           <div className="absolute right-0 mt-2 w-32 bg-white text-black rounded-lg shadow-lg py-2">
             <button
