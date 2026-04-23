@@ -1,4 +1,4 @@
-# Simplified Keycloak IAM Platform
+# Keycloak IAM Platform
 
 A simplified Identity and Access Management (IAM) platform inspired by Keycloak, built with React, TypeScript, Node.js, Express, and MongoDB. The application provides secure authentication, user and organization management, invitation workflows, and configurable global authentication and MFA settings.
 
