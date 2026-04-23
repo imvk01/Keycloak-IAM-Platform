@@ -4,6 +4,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import rateLimit from "express-rate-limit";
+import path from "path";
 
 import authRoutes from "./routes/team.route";
 import organizationRoutes from "./routes/organization.routes";
@@ -12,6 +13,10 @@ import userRoutes from "./routes/user.routes";
 import globalSettingsRoutes from "./routes/globalSettings.routes";
 
 dotenv.config();
+
+const app: Application = express();
+
+const PORT = process.env.PORT || 4000;
 
 mongoose
   .connect(process.env.MONGO_URI as string)
@@ -22,21 +27,19 @@ mongoose
     console.log("Error connecting to DB:", err);
   });
 
-const app: Application = express();
-
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin:
+      process.env.NODE_ENV === "production"
+        ? process.env.CLIENT_URL
+        : "http://localhost:5173",
     credentials: true,
   })
 );
 
 app.use(express.json());
-
-// Important for reading JWT from cookies
 app.use(cookieParser());
 
-// General API rate limiter
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -48,11 +51,21 @@ app.use(
   })
 );
 
+// API routes
 app.use("/api/auth", authRoutes);
 app.use("/organizations", organizationRoutes);
 app.use("/suborganizations", subOrganizationRoutes);
 app.use("/users", userRoutes);
 app.use("/api/global-settings", globalSettingsRoutes);
+
+// Serve frontend in production
+const clientDistPath = path.join(__dirname, "../../client/dist");
+
+app.use(express.static(clientDistPath));
+
+app.get("*", (req: Request, res: Response) => {
+  res.sendFile(path.join(clientDistPath, "index.html"));
+});
 
 interface AppError extends Error {
   codeStatus?: number;
@@ -69,6 +82,6 @@ app.use((err: AppError, req: Request, res: Response, next: NextFunction) => {
   });
 });
 
-app.listen(4000, () => {
-  console.log("Server is running on port 4000");
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
