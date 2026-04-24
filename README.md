@@ -320,15 +320,6 @@ Examples:
 
 ---
 
-## Demo Video
-
-Optional Loom walkthrough:
-
-```txt
-https://loom.com/your-demo-link
-```
-
----
 
 ## Security Notes
 
