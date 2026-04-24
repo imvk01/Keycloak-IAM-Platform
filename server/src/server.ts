@@ -15,24 +15,22 @@ import globalSettingsRoutes from "./routes/globalSettings.routes";
 dotenv.config();
 
 const app: Application = express();
-
 const PORT = process.env.PORT || 4000;
+
+// Important for Render + express-rate-limit
+app.set("trust proxy", 1);
 
 mongoose
   .connect(process.env.MONGO_URI as string)
-  .then(() => {
-    console.log("Connected to the DB");
-  })
-  .catch((err: Error) => {
-    console.log("Error connecting to DB:", err);
-  });
+  .then(() => console.log("Connected to the DB"))
+  .catch((err: Error) => console.log("Error connecting to DB:", err));
 
 app.use(
   cors({
-    origin:
-      process.env.NODE_ENV === "production"
-        ? process.env.CLIENT_URL
-        : "http://localhost:5173",
+    origin: [
+      "http://localhost:5173",
+      "https://keycloak-iam-platform.onrender.com"
+    ],
     credentials: true,
   })
 );
@@ -44,12 +42,18 @@ app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 100,
+    standardHeaders: true,
+    legacyHeaders: false,
     message: {
       success: false,
       message: "Too many requests. Please try again later.",
     },
   })
 );
+
+app.get("/api/health", (req: Request, res: Response) => {
+  res.json({ success: true, message: "API is running..." });
+});
 
 // API routes
 app.use("/api/auth", authRoutes);
@@ -58,9 +62,8 @@ app.use("/suborganizations", subOrganizationRoutes);
 app.use("/users", userRoutes);
 app.use("/api/global-settings", globalSettingsRoutes);
 
-// Serve frontend in production
+// Serve frontend
 const clientDistPath = path.join(__dirname, "../../client/dist");
-
 app.use(express.static(clientDistPath));
 
 app.get("/*splat", (req: Request, res: Response) => {
